@@ -145,3 +145,41 @@ export const logoutController = async (req, res) => {
         });
     }
 };
+
+
+export const updateUserController = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user._id);
+        if (!user) {
+            return res.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const { name, email, address, city, country, phone } = req.body;
+
+        // Validation and update
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (address) user.address = address;
+        if (city) user.city = city;
+        if (country) user.country = country;
+        if (phone) user.phone = phone;
+
+        // Save user
+        await user.save();
+
+        res.status(200).send({
+            success: true,
+            message: "User updated successfully"
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({
+            success: false,
+            message: 'Error updating user',
+            error: error.message
+        });
+    }
+};
