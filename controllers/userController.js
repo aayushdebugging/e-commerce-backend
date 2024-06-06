@@ -6,7 +6,7 @@ export const registerController = async (req, res) => {
         const { name, email, password, address, city, country, phone } = req.body;
         
         // Validation
-        if (!name || !email || !password || !address || !phone || !country || !city) { 
+        if (!name || !email || !password || !address || !phone || !country || !city) {
             return res.status(400).send({
                 success: false,
                 message: "Please provide all the necessary fields."
@@ -16,9 +16,8 @@ export const registerController = async (req, res) => {
         // Check existing user 
         const existingUser = await userModel.findOne({ email });
         
-        // Validation
         if (existingUser) {
-            return res.status(400).send({ // Changed status to 400
+            return res.status(400).send({
                 success: false,
                 message: "User already exists"
             });
@@ -54,6 +53,7 @@ export const registerController = async (req, res) => {
 export const loginController = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
         // Validation
         if (!email || !password) {
             return res.status(400).send({
@@ -61,33 +61,35 @@ export const loginController = async (req, res) => {
                 message: 'Please provide both Email and Password'
             });
         }
+        
         // Check user
         const user = await userModel.findOne({ email });
-        // User validation
+        
         if (!user) {
             return res.status(404).send({
                 success: false,
                 message: 'User Not Found'
             });
         }
+        
         // Check password
-        const isMatch = await user.comparePassword(password); 
-        // Validation
+        const isMatch = await user.comparePassword(password);
+        
         if (!isMatch) {
             return res.status(401).send({ 
                 success: false,
                 message: 'Invalid credentials'
             });
         }
-        //token
+        
+        // Generate token
         const token = user.generateToken();
 
-
-        res.status(200).cookie("token" , token,{
-            expires :new Date(Date.now()+ 15*24*60*60*1000),
-            secure: process.env.NODE_ENV === "development"? true:false
-        })
-        .send({
+        res.status(200).cookie("token", token, {
+            expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+            secure: process.env.NODE_ENV !== "development",
+            httpOnly: true
+        }).send({
             success: true,
             message: 'Login successful',
             token,
@@ -103,21 +105,43 @@ export const loginController = async (req, res) => {
     }
 };
 
-
-//get user profile
- export const getUserProfileController = async (req, res) => {
+// Get user profile
+export const getUserProfileController = async (req, res) => {
     try { 
+        const user = await userModel.findById(req.user._id).select('-password');
+        
         res.status(200).send({
             success: true,
             message: 'User Profile fetched Successfully',
-        })
-
-    }catch(error){
-        console.log(error)
+            user,
+        });
+    } catch (error) {
+        console.log(error);
         res.status(500).send({
-            sucess:false,
-            message:"Error in getting user profile",
-            error
-        })
+            success: false,
+            message: "Error in getting user profile",
+            error: error.message
+        });
     }
- };
+};
+
+// Logout
+export const logoutController = async (req, res) => {
+    try {
+        res.status(200).cookie("token", "", {
+            expires: new Date(Date.now()),
+            secure: process.env.NODE_ENV !== "development",
+            httpOnly: true
+        }).send({
+            success: true,
+            message: "Logout Successfully",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({
+            success: false,
+            message: "Error in logout",
+            error: error.message
+        });
+    }
+};

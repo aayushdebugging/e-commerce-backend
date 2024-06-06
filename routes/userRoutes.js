@@ -1,5 +1,5 @@
 import express from 'express'
-import {loginController, registerController} from "../controllers/userController.js";
+import {loginController, logoutController, registerController} from "../controllers/userController.js";
 import { getUserProfileController } from '../controllers/userController.js';
 import { isAuth } from '../middlewares/authMiddleware.js';
 
@@ -18,5 +18,9 @@ router.post('/login',loginController)
 
 //profile
 router.get('/profile',isAuth,getUserProfileController);
+
+
+//logout
+router.get('/logout',isAuth,logoutController);
 
 export default router;
