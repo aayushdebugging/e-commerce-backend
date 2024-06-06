@@ -71,17 +71,24 @@ export const loginController = async (req, res) => {
             });
         }
         // Check password
-        const isMatch = await user.comparePassword(password); // Use user object and pass the password
+        const isMatch = await user.comparePassword(password); 
         // Validation
         if (!isMatch) {
-            return res.status(401).send({ // Changed status to 401 for unauthorized access
+            return res.status(401).send({ 
                 success: false,
                 message: 'Invalid credentials'
             });
         }
-        res.status(200).send({
+        //token
+        const token = user.generateToken();
+
+
+        res.status(200).cookie("token" , token)
+        .send({
             success: true,
-            message: 'Login successful'
+            message: 'Login successful',
+            token,
+            user
         });
     } catch (error) {
         console.error(error);
