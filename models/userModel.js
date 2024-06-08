@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import JWT from "jsonwebtoken";
@@ -6,7 +5,7 @@ import JWT from "jsonwebtoken";
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Name is required'] 
+        required: [true, 'Name is required']
     },
     email: {
         type: String,
@@ -16,7 +15,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password should be at least 6 characters'] 
+        minlength: [6, 'Password should be at least 6 characters']
     },
     address: {
         type: String,
@@ -35,32 +34,49 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Phone number is required']
     },
     profilePic: {
-        type: String,
-        default: null 
+        public_id: {
+            type: String,
+        },
+        url: {
+            type: String,
+        }
     }
 }, { timestamps: true });
 
-
-
-//functions
-//hash func
-userSchema.pre('save', async function(next){
-    if(this.isModified('password')) return next()
-    this.password = await bcrypt.hash(this.password, 10);
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next(); // Check if password is modified
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        return next();
+    } catch (error) {
+        return next(error);
+    }
 });
 
-//compare fucntion
-userSchema.methods.comparePassword = async function(enteredPassword){
-    return await bcrypt.compare(enteredPassword, this.password);
+// Compare entered password with stored password
+userSchema.methods.comparePassword = async function (enteredPassword) {
+    try {
+        return await bcrypt.compare(enteredPassword, this.password);
+    } catch (error) {
+        throw new Error(error);
+    }
 };
 
-//JWT function
-userSchema.methods.generateToken = function(){
-    return JWT.sign({_id: this._id}, process.env.SECRET_KEY, {expiresIn:"7d",
-
-    });
+// Generate JWT token
+userSchema.methods.generateToken = function () {
+    try {
+        const token = JWT.sign({ _id: this._id }, process.env.SECRET_KEY, {
+            expiresIn: "7d",
+        });
+        console.log("Generated token:", token); // Log generated token for debugging
+        return token;
+    } catch (error) {
+        throw new Error(error);
+    }
 };
 
+const userModel = mongoose.model("Users", userSchema);
 
-export const userModel = mongoose.model("Users", userSchema);
 export default userModel;

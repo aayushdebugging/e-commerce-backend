@@ -1,4 +1,6 @@
 import userModel from '../models/userModel.js';
+import cloudinary from 'cloudinary';
+import { getDataUri } from '../utils/features.js';
 
 // Register
 export const registerController = async (req, res) => {
@@ -146,7 +148,7 @@ export const logoutController = async (req, res) => {
     }
 };
 
-
+// Update user profile
 export const updateUserController = async (req, res) => {
     try {
         const user = await userModel.findById(req.user._id);
@@ -179,6 +181,54 @@ export const updateUserController = async (req, res) => {
         res.status(500).send({
             success: false,
             message: 'Error updating user',
+            error: error.message
+        });
+    }
+};
+
+export const updateProfilePhotoController = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user._id);
+
+        // Check if req.file is defined and contains the file data
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).send({
+                success: false,
+                message: 'No file uploaded or file data missing'
+            });
+        }
+
+        // Get the file data
+        const file = req.file.string; 
+        
+        // Delete previous image if it exists
+        if (user.profilePic && user.profilePic.public_id) {
+            await cloudinary.v2.uploader.destroy(user.profilePic.public_id);
+        }
+
+        // Upload new profile photo to Cloudinary
+        const uploadedPhoto = await cloudinary.v2.uploader.upload(file);
+
+        // Update user's profilePic data
+        user.profilePic = {
+            public_id: uploadedPhoto.public_id,
+            url: uploadedPhoto.secure_url
+        };
+
+        // Save user with updated profile photo
+        await user.save();
+
+        // Send success response
+        res.status(200).send({
+            success: true,
+            message: 'Profile photo updated successfully'
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({
+            success: false,
+            message: 'Error updating user profile photo',
             error: error.message
         });
     }

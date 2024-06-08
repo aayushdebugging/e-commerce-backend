@@ -1,7 +1,8 @@
 import express from 'express'
-import {loginController, logoutController, registerController, updateUserController} from "../controllers/userController.js";
+import {loginController, logoutController, registerController, updateProfilePhotoController, updateUserController} from "../controllers/userController.js";
 import { getUserProfileController } from '../controllers/userController.js';
 import { isAuth } from '../middlewares/authMiddleware.js';
+import { singleUpload } from '../middlewares/multer.js';
 
 
 //router object
@@ -27,4 +28,9 @@ router.get('/logout',isAuth,logoutController);
 //updateUser
 router.put('/updateUser',isAuth,updateUserController);
 
+
+//update profile pic
+router.put('/updateProfilePic',isAuth,singleUpload,updateProfilePhotoController)
+
 export default router;
+
